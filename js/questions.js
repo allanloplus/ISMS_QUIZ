@@ -1,6 +1,7 @@
 /**
  * 課程與測驗題庫
  * type: "tf"（是非題，answer 為 true/false）或 "mc"（選擇題，answer 為選項代號）
+ * hours: 課程時數（印於證書）
  * points: 每題配分；explain: 說明／依據（僅於通過後的解答附件中顯示）
  */
 window.COURSES = [
@@ -8,7 +9,7 @@ window.COURSES = [
     id: "C01",
     title: "ISO 27001標準簡介",
     subtitle: "ISO/IEC 27001:2022 條文架構與要求重點",
-    hours: null,
+    hours: 3,
     questions: [
       { type: "tf", points: 10, answer: true,
         q: "ISO/IEC 27001 標準最新的版本是2022年公告的，所以正確的標準表示方式應為ISO/IEC27001:2022。",
@@ -46,6 +47,7 @@ window.COURSES = [
     id: "C02",
     title: "資產盤點、風險評鑑及風險改善訓練",
     subtitle: "資訊資產分類與價值鑑別、風險評鑑及風險處理",
+    hours: 3,
     questions: [
       { type: "tf", points: 6, answer: true,
         q: "資訊資產依其性質分為 7 類：人員、文件、軟體、通訊、硬體、資料、環境。",
@@ -98,6 +100,7 @@ window.COURSES = [
     id: "C03",
     title: "營運持續運作管理訓練",
     subtitle: "業務衝擊分析、營運持續運作計畫與演練",
+    hours: 3,
     questions: [
       { type: "tf", points: 6, answer: true,
         q: "本公司之營運持續運作計畫分為 IT 及 OT 二份，分別為（IS-04-036）及（IS-04-037）。",
@@ -150,6 +153,7 @@ window.COURSES = [
     id: "C04",
     title: "內部稽核觀念與技巧訓練",
     subtitle: "內部稽核規劃、執行、缺失分類與矯正追蹤",
+    hours: 3,
     questions: [
       { type: "tf", points: 6, answer: true,
         q: "本公司每年定期辦理資訊安全內部稽核，並視需要不定期執行專案稽核。",

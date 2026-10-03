@@ -204,8 +204,10 @@ main { padding-top: 28px; padding-bottom: 48px; min-height: calc(100vh - 140px);
 .cert-body { font-family: var(--serif); font-size: 20px; line-height: 1.9; margin: 16px 0 0; }
 .cert-course { font-size: 28px; font-weight: 700; color: var(--navy); }
 .cert-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; }
-.cert-sign { width: 260px; }
+.cert-sign { width: 260px; text-align: center; }
 .sign-name { font-family: var(--serif); font-size: 20px; font-weight: 700; }
+.sign-img { display: block; height: 92px; width: auto; margin: 0 auto -10px; }
+.sign-label b { color: var(--ink); font-weight: 700; letter-spacing: 0; font-size: 14px; }
 .sign-line { border-top: 1px solid #39465a; margin: 6px 0 4px; }
 .sign-label { font-size: 13px; color: var(--muted); letter-spacing: 2px; }
 .cert-seal {

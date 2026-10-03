@@ -90,7 +90,7 @@
         "<h3>" + esc(c.title) + "</h3>" +
         '<p class="muted">' + esc(c.subtitle || "") + "</p>" +
         '<ul class="course-meta"><li>' + parts.join("、") + "</li><li>滿分 " + totalPoints(c) +
-        " 分，" + CFG.passScore + " 分及格</li></ul>" +
+        " 分，" + CFG.passScore + " 分及格</li>" + (c.hours ? "<li>課程時數 " + c.hours + " 小時</li>" : "") + "</ul>" +
         '<button class="btn btn-primary btn-block" data-course="' + esc(c.id) + '">進行測驗</button>' +
         "</article>";
     }).join("");
@@ -241,7 +241,7 @@
     var c = state.course, r = state.result, p = state.profile;
     var payload = {
       timestamp: r.date.toISOString(),
-      courseId: c.id, courseTitle: c.title, category: CFG.category, instructor: CFG.instructor,
+      courseId: c.id, courseTitle: c.title, hours: c.hours || "", category: CFG.category, instructor: CFG.instructor,
       company: p.company, dept: p.dept, name: p.name, jobTitle: p.jobTitle, email: p.email, mode: p.mode, classDate: p.classDate,
       score: r.score, passed: r.passed, certNo: r.certNo,
       answers: r.answers.map(function (a, i) { return answerLabel(c.questions[i], a); }).join(",")
@@ -321,9 +321,11 @@
       '<p class="cert-org">' + esc(p.company) + "　" + esc(p.dept) + "　" + esc(p.jobTitle) + "</p>" +
       '<p class="cert-body">於 ' + esc(fmtDateStr(p.classDate)) + " 參加「" + esc(CFG.category) + "」<br>" +
       '<span class="cert-course">' + esc(c.title) + "</span><br>" +
-      "課程（" + esc(p.mode) + "），並通過課後測驗，成績 <b>" + r.score + "</b> 分，特頒此證。</p>" +
+      "課程（" + esc(p.mode) + (c.hours ? "，課程時數 " + c.hours + " 小時" : "") + "），並通過課後測驗，成績 <b>" + r.score + "</b> 分，特頒此證。</p>" +
       '<div class="cert-foot">' +
-      '<div class="cert-sign"><div class="sign-name">' + esc(CFG.instructor) + '</div><div class="sign-line"></div><div class="sign-label">課程講師</div></div>' +
+      '<div class="cert-sign">' +
+      (CFG.signature ? '<img class="sign-img" src="' + esc(CFG.signature) + '" alt="講師簽名">' : '<div class="sign-name">' + esc(CFG.instructor) + "</div>") +
+      '<div class="sign-line"></div><div class="sign-label">課程講師　<b>' + esc(CFG.instructor) + "</b></div></div>" +
       '<div class="cert-seal"><svg viewBox="0 0 24 24" width="30" height="30"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z"/></svg><span>ISMS</span><small>PASSED</small></div>' +
       '<div class="cert-sign"><div class="sign-name">' + fmtDate(r.date) + '</div><div class="sign-line"></div><div class="sign-label">測驗日期</div></div>' +
       "</div></div></div>";
@@ -355,7 +357,7 @@
       '<dl class="ak-info">' +
       "<dt>姓名</dt><dd>" + esc(p.name) + "</dd>" +
       "<dt>公司／單位</dt><dd>" + esc(p.company) + "／" + esc(p.dept) + "</dd>" +
-      "<dt>上課日期</dt><dd>" + esc(fmtDateStr(p.classDate)) + "</dd>" +
+      "<dt>上課日期</dt><dd>" + esc(fmtDateStr(p.classDate)) + (c.hours ? "（" + c.hours + " 小時）" : "") + "</dd>" +
       "<dt>成績</dt><dd>" + r.score + " 分（答對 " + r.correct + "/" + c.questions.length + " 題）</dd>" +
       "<dt>證書編號</dt><dd>" + esc(r.certNo) + "</dd>" +
       "<dt>測驗時間</dt><dd>" + fmtStamp(r.date) + "</dd>" +
@@ -402,7 +404,10 @@
     var pdf = null;
 
     var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-    fontsReady.then(function () {
+    var imgsReady = Promise.all($all("#render-stage img").map(function (img) {
+      return img.complete ? null : new Promise(function (res) { img.onload = img.onerror = res; });
+    }));
+    Promise.all([fontsReady, imgsReady]).then(function () {
       return sheets.reduce(function (chain, sheet) {
         return chain.then(function () {
           return window.html2canvas(sheet, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false })

@@ -5,6 +5,8 @@ window.QUIZ_CONFIG = {
   siteTitle: "ISMS 課程課後測驗",
   category: "ISMS專業課程教育訓練",
   instructor: "羅宇倫 Allan Lo",
+  // 講師簽名圖檔（透明背景 PNG），留空則不顯示
+  signature: "img/signature.png",
   // 及格分數（滿分 100）
   passScore: 70,
   // 證書編號前綴
