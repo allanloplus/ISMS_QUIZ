@@ -60,6 +60,42 @@
       pad(date.getDate()) + "-" + rand.toUpperCase();
   }
 
+  // 是否被嵌入於其他網頁（如 Google Sites）的 iframe 中
+  var FRAMED = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
+
+  // 頁內確認視窗：Google Sites 等沙箱 iframe 會封鎖 window.confirm()，故不使用瀏覽器原生對話框
+  function confirmDialog(message, okText) {
+    return new Promise(function (resolve) {
+      var prevFocus = document.activeElement;
+      var wrap = document.createElement("div");
+      wrap.className = "modal-backdrop";
+      wrap.innerHTML =
+        '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-msg">' +
+        '<p id="modal-msg">' + esc(message) + "</p>" +
+        '<div class="actions actions-center">' +
+        '<button type="button" class="btn btn-ghost" data-v="0">取消</button>' +
+        '<button type="button" class="btn btn-primary" data-v="1">' + esc(okText || "確定") + "</button>" +
+        "</div></div>";
+      function close(v) {
+        document.removeEventListener("keydown", onKey, true);
+        wrap.parentNode && wrap.parentNode.removeChild(wrap);
+        if (prevFocus && prevFocus.focus) prevFocus.focus();
+        resolve(v);
+      }
+      function onKey(e) {
+        if (e.key === "Escape") { e.preventDefault(); close(false); }
+      }
+      wrap.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-v]");
+        if (b) close(b.getAttribute("data-v") === "1");
+        else if (e.target === wrap) close(false);
+      });
+      document.addEventListener("keydown", onKey, true);
+      document.body.appendChild(wrap);
+      $('[data-v="1"]', wrap).focus();
+    });
+  }
+
   // ---------- 畫面切換 ----------
   function show(view) {
     $all(".view").forEach(function (v) { v.hidden = v.id !== "view-" + view; });
@@ -210,8 +246,13 @@
       $("#q-" + firstMissing).scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    if (!window.confirm("確定交卷？交卷後將無法修改答案。")) return;
+    confirmDialog("確定交卷？交卷後將無法修改答案。", "確定交卷").then(function (ok) {
+      if (ok) gradeQuiz(ans);
+    });
+  }
 
+  function gradeQuiz(ans) {
+    var c = state.course;
     var score = 0;
     var correct = 0;
     c.questions.forEach(function (q, i) {
@@ -277,10 +318,13 @@
         '<button class="btn btn-ghost" id="btn-print">列印／另存 PDF</button>' +
         "</div>" +
         '<p class="pdf-status" id="pdf-status" role="status"></p>' +
+      '<p class="pdf-status" id="pdf-link" hidden>若下載沒有開始，請 <a target="_blank" rel="noopener">在新分頁開啟 PDF</a> 後再儲存或列印。</p>' +
         '<div class="actions actions-center"><button class="btn btn-link" data-nav="home">回課程列表</button></div>';
       buildPrintable();
       $("#btn-pdf").addEventListener("click", downloadPdf);
-      $("#btn-print").addEventListener("click", function () { window.print(); });
+      // iframe 沙箱（如 Google Sites）會封鎖列印對話框，改由新分頁開啟 PDF 列印
+      if (FRAMED) $("#btn-print").hidden = true;
+      else $("#btn-print").addEventListener("click", function () { window.print(); });
     } else {
       card.innerHTML = head +
         "<h2>未通過測驗</h2>" +
@@ -388,6 +432,21 @@
     });
   }
 
+  // html2canvas 偶爾在 iframe 內（如 Google Sites）等不到複製頁面載入而停住，逾時則重試
+  function capture(sheet, tries) {
+    var timer;
+    var attempt = window.html2canvas(sheet, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
+    var limit = new Promise(function (res, rej) { timer = setTimeout(function () { rej(new Error("capture timeout")); }, 8000); });
+    return Promise.race([attempt, limit]).then(function (canvas) {
+      clearTimeout(timer);
+      return canvas;
+    }, function (err) {
+      clearTimeout(timer);
+      if (tries > 1) return capture(sheet, tries - 1);
+      throw err;
+    });
+  }
+
   function downloadPdf() {
     var btn = $("#btn-pdf");
     var status = $("#pdf-status");
@@ -403,14 +462,17 @@
     var jsPDF = window.jspdf.jsPDF;
     var pdf = null;
 
-    var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    // 字型或圖片載入受阻（如公司網路擋 Google Fonts、嵌入 iframe）時，最多等 4 秒即繼續產生
+    var timeout = new Promise(function (res) { setTimeout(res, 4000); });
+    var fontsReady = Promise.race([document.fonts && document.fonts.ready ? document.fonts.ready : null, timeout]);
     var imgsReady = Promise.all($all("#render-stage img").map(function (img) {
       return img.complete ? null : new Promise(function (res) { img.onload = img.onerror = res; });
-    }));
+    })).then(null, null);
+    imgsReady = Promise.race([imgsReady, timeout]);
     Promise.all([fontsReady, imgsReady]).then(function () {
       return sheets.reduce(function (chain, sheet) {
         return chain.then(function () {
-          return window.html2canvas(sheet, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false })
+          return capture(sheet, 3)
             .then(function (canvas) {
               var landscape = sheet.classList.contains("sheet-cert");
               var w = landscape ? 297 : 210, h = landscape ? 210 : 297;
@@ -432,11 +494,16 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
-      status.textContent = "PDF 已產生並開始下載。";
+      // 保留連結供下載被封鎖時（如嵌入 Google Sites）改由新分頁開啟
+      var link = $("#pdf-link");
+      if (link.dataset.url) URL.revokeObjectURL(link.dataset.url);
+      link.dataset.url = url;
+      $("a", link).href = url;
+      link.hidden = false;
+      status.textContent = FRAMED ? "PDF 已產生。" : "PDF 已產生並開始下載。";
     }).catch(function (err) {
       console.error(err);
-      status.textContent = "PDF 產生失敗，請改用「列印／另存 PDF」。";
+      status.textContent = FRAMED ? "PDF 產生失敗，請在新視窗開啟本網站後再試。" : "PDF 產生失敗，請改用「列印／另存 PDF」。";
     }).then(function () {
       stage.classList.remove("capturing");
       btn.disabled = false;
@@ -448,9 +515,10 @@
     var nav = e.target.closest("[data-nav]");
     if (nav) {
       e.preventDefault();
-      if (nav.closest("#view-quiz") && !window.confirm("確定放棄本次測驗？作答內容將不會保存。")) return;
-      renderHome();
-      show(nav.getAttribute("data-nav"));
+      var go = function () { renderHome(); show(nav.getAttribute("data-nav")); };
+      if (nav.closest("#view-quiz")) {
+        confirmDialog("確定放棄本次測驗？作答內容將不會保存。", "放棄測驗").then(function (ok) { if (ok) go(); });
+      } else go();
       return;
     }
     var cb = e.target.closest("[data-course]");
@@ -464,6 +532,11 @@
     updateProgress();
   });
 
+  if (FRAMED) {
+    var fl = $("#frame-link");
+    fl.hidden = false;
+    $("a", fl).href = window.location.href.split("#")[0];
+  }
   fillStatic();
   renderHome();
   show("home");
