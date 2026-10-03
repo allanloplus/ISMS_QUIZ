@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ISMS 課程課後測驗</title>
+  <meta name="description" content="ISMS專業課程教育訓練 課後測驗與結業證書">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#" data-nav="home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z"/></svg>
+        </span>
+        <span>
+          <strong id="site-title">ISMS 課程課後測驗</strong>
+          <small id="site-category">ISMS專業課程教育訓練</small>
+        </span>
+      </a>
+    </div>
+  </header>
+
+  <main class="wrap" id="app">
+    <!-- 首頁：課程列表 -->
+    <section id="view-home" class="view">
+      <div class="hero">
+        <h1>課後測驗</h1>
+        <p>完成實體或線上課程後，請選擇您參加的課程進行課後測驗。測驗成績達 <b class="js-pass">70</b> 分即為通過，可下載結業證書（附測驗題目與解答）。</p>
+        <ol class="steps">
+          <li><span>1</span>參加課程</li>
+          <li><span>2</span>填寫受測資料</li>
+          <li><span>3</span>完成測驗</li>
+          <li><span>4</span>下載證書</li>
+        </ol>
+      </div>
+      <h2 class="section-title">課程列表</h2>
+      <div class="course-grid" id="course-grid"></div>
+      <p class="instructor-note">課程講師：<span class="js-instructor"></span></p>
+    </section>
+
+    <!-- 受測者資料 -->
+    <section id="view-info" class="view" hidden>
+      <button class="link-back" data-nav="home">← 返回課程列表</button>
+      <div class="card">
+        <p class="eyebrow">受測者資料</p>
+        <h2 class="js-course-title"></h2>
+        <p class="muted">請正確填寫以下資料，通過測驗後將顯示於結業證書上。</p>
+        <form id="info-form" novalidate>
+          <div class="form-grid">
+            <label class="field">
+              <span>公司名稱 <i>*</i></span>
+              <input name="company" autocomplete="organization" required maxlength="60">
+            </label>
+            <label class="field">
+              <span>單位 <i>*</i></span>
+              <input name="dept" required maxlength="40">
+            </label>
+            <label class="field">
+              <span>姓名 <i>*</i></span>
+              <input name="name" autocomplete="name" required maxlength="30">
+            </label>
+            <label class="field">
+              <span>職稱 <i>*</i></span>
+              <input name="jobTitle" autocomplete="organization-title" required maxlength="30">
+            </label>
+            <label class="field field-wide">
+              <span>E-mail <i>*</i></span>
+              <input name="email" type="email" autocomplete="email" required maxlength="80">
+            </label>
+            <fieldset class="field field-wide">
+              <span>參加方式 <i>*</i></span>
+              <div class="radio-row">
+                <label class="pill"><input type="radio" name="mode" value="實體課程" required> 實體課程</label>
+                <label class="pill"><input type="radio" name="mode" value="線上課程"> 線上課程</label>
+              </div>
+            </fieldset>
+            <label class="check field-wide">
+              <input type="checkbox" name="attended" required>
+              <span>本人已完成本課程之上課（實體或線上），並親自作答本測驗。</span>
+            </label>
+          </div>
+          <p class="form-error" id="info-error" role="alert"></p>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">開始測驗 →</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 測驗 -->
+    <section id="view-quiz" class="view" hidden>
+      <div class="quiz-head">
+        <div>
+          <p class="eyebrow">課後測驗</p>
+          <h2 class="js-course-title"></h2>
+          <p class="muted" id="quiz-meta"></p>
+        </div>
+        <div class="progress" aria-live="polite">
+          <div class="progress-label"><span id="progress-text">0 / 0</span> 題已作答</div>
+          <div class="progress-bar"><div id="progress-fill"></div></div>
+        </div>
+      </div>
+      <form id="quiz-form" novalidate>
+        <div id="quiz-body"></div>
+        <p class="form-error" id="quiz-error" role="alert"></p>
+        <div class="actions actions-sticky">
+          <button type="button" class="btn btn-ghost" data-nav="home">放棄測驗</button>
+          <button type="submit" class="btn btn-primary">交卷</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 結果 -->
+    <section id="view-result" class="view" hidden>
+      <div class="card result-card" id="result-card"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <span class="js-category"></span> · 課程講師 <span class="js-instructor"></span>
+    </div>
+  </footer>
+
+  <!-- 證書與解答（用於產生 PDF 與列印，平時不顯示於畫面） -->
+  <div id="render-stage" class="render-stage" aria-hidden="true"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/questions.js"></script>
+  <script src="js/vendor/html2canvas.min.js" defer></script>
+  <script src="js/vendor/jspdf.umd.min.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>
