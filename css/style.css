@@ -49,7 +49,8 @@ main { padding-top: 28px; padding-bottom: 48px; min-height: calc(100vh - 140px);
   color: #fff; border-radius: var(--radius); padding: 28px 28px 24px; box-shadow: var(--shadow);
 }
 .hero h1 { margin: 0 0 6px; font-size: 28px; }
-.hero p { margin: 0; opacity: .92; max-width: 640px; }
+.hero h1 span { display: inline-block; }
+.hero p { margin: 0; opacity: .92; max-width: 760px; }
 .steps { list-style: none; display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 20px 0 0; padding: 0; font-size: 14px; }
 .steps li { display: flex; align-items: center; gap: 8px; }
 .steps span {
