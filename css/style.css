@@ -98,7 +98,7 @@ main { padding-top: 28px; padding-bottom: 48px; min-height: calc(100vh - 140px);
 .field > span { font-size: 14px; font-weight: 500; }
 .field i { color: var(--bad); font-style: normal; }
 .field-wide { grid-column: 1 / -1; }
-.field input {
+.field input:not([type=radio]) {
   font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfe; width: 100%;
 }
 .field input.invalid { border-color: var(--bad); background: var(--bad-bg); }

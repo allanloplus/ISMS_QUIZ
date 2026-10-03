@@ -7,7 +7,7 @@
 var SHEET_NAME = "測驗紀錄";
 var HEADERS = [
   "測驗時間", "課程代碼", "課程名稱", "教育訓練類別", "課程講師",
-  "公司名稱", "單位", "姓名", "職稱", "E-mail", "參加方式",
+  "公司名稱", "單位", "姓名", "職稱", "E-mail", "實際上課日期", "參加方式",
   "成績", "結果", "證書編號", "作答內容"
 ];
 
@@ -21,7 +21,7 @@ function doPost(e) {
     if (sh.getLastRow() === 0) sh.appendRow(HEADERS);
     sh.appendRow([
       new Date(d.timestamp), d.courseId, d.courseTitle, d.category, d.instructor,
-      clean(d.company), clean(d.dept), clean(d.name), clean(d.jobTitle), clean(d.email), clean(d.mode),
+      clean(d.company), clean(d.dept), clean(d.name), clean(d.jobTitle), clean(d.email), clean(d.classDate), clean(d.mode),
       Number(d.score), d.passed ? "通過" : "未通過", d.certNo || "", d.answers
     ]);
     return ContentService.createTextOutput("ok");

@@ -28,6 +28,14 @@
 
   function pad(n) { return (n < 10 ? "0" : "") + n; }
   function fmtDate(d) { return d.getFullYear() + " 年 " + (d.getMonth() + 1) + " 月 " + d.getDate() + " 日"; }
+  function fmtDateStr(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
+    return m ? m[1] + " 年 " + Number(m[2]) + " 月 " + Number(m[3]) + " 日" : s;
+  }
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
   function fmtStamp(d) {
     return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " +
       pad(d.getHours()) + ":" + pad(d.getMinutes());
@@ -100,6 +108,7 @@
       ["company", "dept", "name", "jobTitle", "email"].forEach(function (k) { if (p[k]) form.elements[k].value = p[k]; });
       if (p.mode) $all('input[name="mode"]', form).forEach(function (r) { r.checked = r.value === p.mode; });
     }
+    form.elements.classDate.max = todayStr();
     $("#info-error").textContent = "";
     show("info");
   }
@@ -113,19 +122,21 @@
       name: f.elements.name.value.trim(),
       jobTitle: f.elements.jobTitle.value.trim(),
       email: f.elements.email.value.trim(),
+      classDate: f.elements.classDate.value,
       mode: (($all('input[name="mode"]:checked', f)[0]) || {}).value || ""
     };
-    var labels = { company: "公司名稱", dept: "單位", name: "姓名", jobTitle: "職稱", email: "E-mail", mode: "參加方式" };
+    var labels = { company: "公司名稱", dept: "單位", name: "姓名", jobTitle: "職稱", email: "E-mail", classDate: "實際上課日期", mode: "參加方式" };
     var missing = Object.keys(labels).filter(function (k) { return !data[k]; }).map(function (k) { return labels[k]; });
     $all(".field input", f).forEach(function (inp) { inp.classList.toggle("invalid", inp.required && !inp.value.trim()); });
     var err = "";
     if (missing.length) err = "請填寫：" + missing.join("、");
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) { err = "E-mail 格式不正確"; f.elements.email.classList.add("invalid"); }
+    else if (!/^\d{4}-\d{2}-\d{2}$/.test(data.classDate) || data.classDate > todayStr()) { err = "實際上課日期不正確（不可晚於今天）"; f.elements.classDate.classList.add("invalid"); }
     else if (!f.elements.attended.checked) err = "請勾選確認已完成本課程之上課";
     $("#info-error").textContent = err;
     if (err) return;
     state.profile = data;
-    store(PROFILE_KEY, data);
+    store(PROFILE_KEY, { company: data.company, dept: data.dept, name: data.name, jobTitle: data.jobTitle, email: data.email, mode: data.mode });
     renderQuiz();
     show("quiz");
   }
@@ -166,7 +177,7 @@
     if (mc.length) html += block(tf.length ? "二、選擇題" : "選擇題", mc);
     $("#quiz-body").innerHTML = html;
     $("#quiz-meta").textContent = "受測者：" + state.profile.name + "（" + state.profile.company + " " +
-      state.profile.dept + "）｜共 " + c.questions.length + " 題，滿分 " + totalPoints(c) + " 分，" + CFG.passScore + " 分及格";
+      state.profile.dept + "）｜上課日期 " + fmtDateStr(state.profile.classDate) + "｜共 " + c.questions.length + " 題，滿分 " + totalPoints(c) + " 分，" + CFG.passScore + " 分及格";
     $("#quiz-error").textContent = "";
     updateProgress();
   }
@@ -231,7 +242,7 @@
     var payload = {
       timestamp: r.date.toISOString(),
       courseId: c.id, courseTitle: c.title, category: CFG.category, instructor: CFG.instructor,
-      company: p.company, dept: p.dept, name: p.name, jobTitle: p.jobTitle, email: p.email, mode: p.mode,
+      company: p.company, dept: p.dept, name: p.name, jobTitle: p.jobTitle, email: p.email, mode: p.mode, classDate: p.classDate,
       score: r.score, passed: r.passed, certNo: r.certNo,
       answers: r.answers.map(function (a, i) { return answerLabel(c.questions[i], a); }).join(",")
     };
@@ -308,7 +319,7 @@
       '<p class="cert-lead">茲 證 明</p>' +
       '<p class="cert-name">' + esc(p.name) + "</p>" +
       '<p class="cert-org">' + esc(p.company) + "　" + esc(p.dept) + "　" + esc(p.jobTitle) + "</p>" +
-      '<p class="cert-body">參加「' + esc(CFG.category) + "」<br>" +
+      '<p class="cert-body">於 ' + esc(fmtDateStr(p.classDate)) + " 參加「" + esc(CFG.category) + "」<br>" +
       '<span class="cert-course">' + esc(c.title) + "</span><br>" +
       "課程（" + esc(p.mode) + "），並通過課後測驗，成績 <b>" + r.score + "</b> 分，特頒此證。</p>" +
       '<div class="cert-foot">' +
@@ -344,6 +355,7 @@
       '<dl class="ak-info">' +
       "<dt>姓名</dt><dd>" + esc(p.name) + "</dd>" +
       "<dt>公司／單位</dt><dd>" + esc(p.company) + "／" + esc(p.dept) + "</dd>" +
+      "<dt>上課日期</dt><dd>" + esc(fmtDateStr(p.classDate)) + "</dd>" +
       "<dt>成績</dt><dd>" + r.score + " 分（答對 " + r.correct + "/" + c.questions.length + " 題）</dd>" +
       "<dt>證書編號</dt><dd>" + esc(r.certNo) + "</dd>" +
       "<dt>測驗時間</dt><dd>" + fmtStamp(r.date) + "</dd>" +
